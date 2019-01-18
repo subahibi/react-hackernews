@@ -14,12 +14,6 @@ a:hover {
   text-decoration: underline;
 }
 
-ul, li {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
 input {
   padding: 10px;
   border-radius: 5px;
@@ -46,6 +40,5 @@ button:hover {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+} 

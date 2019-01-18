@@ -1,81 +1,21 @@
-import React, { Component } from "react";
+import React from "react";
 import axios from "axios";
 import "./App.css";
-import PropTypes from "prop-types";
+import {
+  DEFAULT_QUERY,
+  DEFAULT_HPP,
+  PATH_BASE,
+  PATH_SEARCH,
+  PARAM_SEARCH,
+  PARAM_PAGE,
+  PARAM_HPP
+} from "../../constants/index";
+import Search from "../Search";
+import Loading from "../Loading";
+import Button from "../Button";
+import Table from "../Table";
 
-const DEFAULT_QUERY = "redux";
-const DEFAULT_HPP = "100";
-
-const PATH_BASE = "https://hn.algolia.com/api/v1";
-const PATH_SEARCH = "/search";
-const PARAM_SEARCH = "query=";
-const PARAM_PAGE = "page=";
-const PARAM_HPP = "hitsPerPage=";
-
-const Button = ({ onClick, className = "", children }) => (
-  <button onClick={onClick} className={className} type="button">
-    {children}
-  </button>
-);
-
-Button.defaultProps = {
-  className: ""
-};
-
-Button.propTypes = {
-  onClick: PropTypes.func.isRequired,
-  className: PropTypes.string,
-  children: PropTypes.node.isRequired
-};
-
-const Search = ({ value, onChange, onSubmit, children }) => (
-  <form onSubmit={onSubmit}>
-    <input type="text" value={value} onChange={onChange} />
-    <button type="submit">{children}</button>
-  </form>
-);
-
-Search.propTypes = {
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  children: PropTypes.node.isRequired
-};
-
-const largeColumn = { width: "40%" };
-const midColumn = { width: "30%" };
-const smallColumn = { width: "10%" };
-
-const Table = ({ list, onDismiss }) => (
-  <div className="table">
-    {list.map(element => (
-      <div key={element.objectID} className="table-row">
-        <span style={largeColumn}>
-          <a href={element.url}>{element.title}</a>
-        </span>
-        <span style={midColumn}>{element.author}</span>
-        <span style={smallColumn}>{element.numComments}</span>
-        <span style={smallColumn}>{element.points}</span>
-        <span style={smallColumn}>
-          <Button
-            onClick={() => onDismiss(element.objectID)}
-            type="button"
-            className="button-inline"
-          >
-            Dismiss
-          </Button>
-        </span>
-      </div>
-    ))}
-  </div>
-);
-
-Table.propTypes = {
-  list: PropTypes.array.isRequired,
-  onDismiss: PropTypes.func.isRequired
-};
-
-class App extends Component {
+class App extends React.Component {
   constructor(props) {
     super(props);
 
@@ -83,13 +23,16 @@ class App extends Component {
       results: null,
       searchKey: "",
       searchTerm: DEFAULT_QUERY,
-      error: null
+      error: null,
+      isLoading: false
     };
   }
 
   needsToSearchTopStories = searchTerm => !this.state.results[searchTerm];
 
   fetchSearchTopStories = (searchTerm, page = 0) => {
+    this.setState({ isLoading: true });
+
     axios(
       `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`
     )
@@ -99,19 +42,9 @@ class App extends Component {
 
   setSearchTopStories = result => {
     const { hits, page } = result;
-    const { searchKey, results } = this.state;
 
-    const oldHits =
-      results && results[searchKey] ? results[searchKey].hits : [];
-    const updatedHits = [...oldHits, ...hits];
-    this.setState({
-      results: {
-        ...results,
-        [searchKey]: { hits: updatedHits, page }
-      }
-    });
+    this.setState(updateSearchTopStoriesState(hits, page));
   };
-
   onSearchChange = event => {
     this.setState({ searchTerm: event.target.value });
   };
@@ -147,7 +80,8 @@ class App extends Component {
   }
 
   render() {
-    const { searchTerm, results, searchKey, error } = this.state;
+    const { searchTerm, results, searchKey, error, isLoading } = this.state;
+
     const { page } =
       (results && results[searchKey] && results[searchKey].page) || 0;
 
@@ -172,22 +106,39 @@ class App extends Component {
         {error ? (
           <div className="interactions">
             <p>Something went wrong.</p>
+            <i className="fas fa-spinner" />{" "}
           </div>
         ) : (
           <Table list={list} onDismiss={this.onDismiss} />
         )}
         <div className="interactions">
-          <Button
+          <ButtonWithLoading
+            isLoading={isLoading}
             onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}
           >
             More
-          </Button>
+          </ButtonWithLoading>
         </div>
       </div>
     );
   }
 }
+const withLoading = Component => ({ isLoading, ...rest }) =>
+  isLoading ? <Loading /> : <Component {...rest} />;
+
+const ButtonWithLoading = withLoading(Button);
+
+const updateSearchTopStoriesState = (hits, page) => prevState => {
+  const { searchKey, results } = prevState;
+  const oldHits = results && results[searchKey] ? results[searchKey].hits : [];
+  const updatedHits = [...oldHits, ...hits];
+  return {
+    results: {
+      ...results,
+      [searchKey]: { hits: updatedHits, page }
+    },
+    isLoading: false
+  };
+};
 
 export default App;
-
-export { Button, Search, Table };

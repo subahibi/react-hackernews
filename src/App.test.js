@@ -3,7 +3,10 @@ import ReactDOM from "react-dom";
 import renderer from "react-test-renderer";
 import Enzyme, { shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
-import App, { Search, Button, Table } from "./App";
+import App from "./components/App/App";
+import Search from "./components/Search";
+import Table from "./components/Table/Table";
+import Button from "./components/Button/Button";
 
 Enzyme.configure({ adapter: new Adapter() });
 
@@ -54,7 +57,9 @@ describe("Table", () => {
     list: [
       { title: "1", author: "1", numComments: 1, points: 2, objectID: "y" },
       { title: "2", author: "2", numComments: 1, points: 2, objectID: "z" }
-    ]
+    ],
+    sortKey: "TITLE",
+    isSortReverse: false
   };
 
   it("shows two items in list", () => {
